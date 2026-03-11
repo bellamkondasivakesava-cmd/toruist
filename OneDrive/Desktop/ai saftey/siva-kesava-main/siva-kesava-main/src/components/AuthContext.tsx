@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   onAuthStateChanged, 
   User, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   signOut,
   createUserWithEmailAndPassword,
@@ -28,6 +30,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle Google redirect result (for production/Vercel where popup may be blocked)
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        const userRef = doc(db, 'users', result.user.uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            uid: result.user.uid,
+            displayName: result.user.displayName,
+            email: result.user.email,
+            photoURL: result.user.photoURL,
+            role: 'user',
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+    }).catch((error) => {
+      console.error('Redirect result error:', error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         // Ensure user document exists in Firestore
@@ -54,11 +76,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async () => {
     const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
     try {
+      // Try popup first (works locally), fall back to redirect (works on Vercel)
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+    } catch (error: any) {
+      // If popup is blocked or not allowed, use redirect instead
+      if (
+        error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/popup-closed-by-user' ||
+        error.code === 'auth/cancelled-popup-request' ||
+        error.code === 'auth/unauthorized-domain'
+      ) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        console.error('Sign in error:', error);
+        throw error;
+      }
     }
   };
 

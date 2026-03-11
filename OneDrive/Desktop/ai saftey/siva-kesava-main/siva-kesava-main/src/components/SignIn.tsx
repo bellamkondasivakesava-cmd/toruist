@@ -18,7 +18,31 @@ const SignIn: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      await signIn();
+      setSuccess(true);
+    } catch (err: any) {
+      const firebaseErrors: Record<string, string> = {
+        'auth/unauthorized-domain': 'This domain is not authorized in Firebase. Please add toruist.vercel.app to Firebase Console → Authentication → Settings → Authorized Domains.',
+        'auth/popup-blocked': 'Popup was blocked. Redirecting to Google sign-in...',
+        'auth/cancelled-popup-request': 'Sign-in cancelled. Please try again.',
+        'auth/network-request-failed': 'Network error. Please check your internet connection.',
+        'auth/internal-error': 'Authentication error. Please try again.',
+      };
+      const msg = (err.code && firebaseErrors[err.code])
+        ? firebaseErrors[err.code]
+        : (err.message || 'Google sign-in failed. Please try again.');
+      setError(msg);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,17 +311,22 @@ const SignIn: React.FC = () => {
 
                 {/* Google button */}
                 <motion.button
-                  onClick={() => signIn()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border border-slate-200 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+                  onClick={handleGoogleSignIn}
+                  disabled={googleLoading}
+                  whileHover={{ scale: googleLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: googleLoading ? 1 : 0.98 }}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border border-slate-200 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <img
-                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                    alt="Google"
-                    className="w-5 h-5"
-                  />
-                  Continue with Google
+                  {googleLoading ? (
+                    <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <img
+                      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                      alt="Google"
+                      className="w-5 h-5"
+                    />
+                  )}
+                  {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
                 </motion.button>
 
                 {/* Toggle */}
