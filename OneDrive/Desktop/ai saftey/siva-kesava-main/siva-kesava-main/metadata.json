@@ -1,0 +1,5 @@
+{
+  "name": "SafeTravel AI",
+  "description": "Smart Travel Safety Assistant providing AI-based safety advice, emergency contacts, and location-based safety maps.",
+  "requestFramePermissions": ["geolocation"]
+}

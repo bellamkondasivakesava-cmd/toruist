@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Stores user profile information and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID from Firebase Auth." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "email": { "type": "string", "description": "The user's email address." },
+        "photoURL": { "type": "string", "description": "The user's profile photo URL." },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's role." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "email"]
+    },
+    "emergencyContacts": {
+      "title": "Emergency Contact",
+      "description": "Stores emergency contacts for a user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The UID of the user who owns this contact." },
+        "name": { "type": "string", "description": "Contact name." },
+        "phone": { "type": "string", "description": "Contact phone number." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the contact was added." }
+      },
+      "required": ["uid", "name", "phone"]
+    },
+    "chatHistory": {
+      "title": "Chat Message",
+      "description": "Stores a single chat message in a user's history.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The UID of the user." },
+        "text": { "type": "string", "description": "The message text." },
+        "sender": { "type": "string", "enum": ["user", "bot"], "description": "Who sent the message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." }
+      },
+      "required": ["uid", "text", "sender", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "User profile document."
+    },
+    "/users/{userId}/emergencyContacts/{contactId}": {
+      "schema": "emergencyContacts",
+      "description": "User's emergency contacts."
+    },
+    "/users/{userId}/chatHistory/{messageId}": {
+      "schema": "chatHistory",
+      "description": "User's chat history."
+    }
+  }
+}
